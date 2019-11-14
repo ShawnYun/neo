@@ -7,22 +7,38 @@ using System.IO;
 
 namespace Neo.Network.P2P
 {
-    //P2P消息类
+    /// <summary>
+    /// P2P消息类
+    /// </summary>
     public class Message : ISerializable
     {
-        //负载最大尺寸
+        /// <summary>
+        /// 负载最大尺寸
+        /// </summary>
         public const int PayloadMaxSize = 0x02000000;
-        //压缩最小尺寸
+        /// <summary>
+        /// 压缩最小尺寸
+        /// </summary>
         private const int CompressionMinSize = 128;
-        //压缩阈值
+        /// <summary>
+        /// 压缩阈值
+        /// </summary>
         private const int CompressionThreshold = 64;
-        //消息标记位，0表示未压缩，1表示压缩
+        /// <summary>
+        /// 消息标记位，0表示未压缩，1表示压缩
+        /// </summary>
         public MessageFlags Flags;
-        //消息指令，包括握手，连接，同步，SPV等指令
+        /// <summary>
+        /// 消息指令，包括握手，连接，同步，SPV等指令
+        /// </summary>
         public MessageCommand Command;
-        //消息负载
+        /// <summary>
+        /// 消息负载
+        /// </summary>
         public ISerializable Payload;
-        //压缩的负载
+        /// <summary>
+        /// 压缩的负载
+        /// </summary>
         private byte[] _payload_compressed;
 
         public int Size => sizeof(MessageFlags) + sizeof(MessageCommand) + _payload_compressed.GetVarSize();
@@ -58,7 +74,9 @@ namespace Neo.Network.P2P
         }
 
 
-        //解压缩Payload，并根据不同的指令类型做对应的序列化处理
+        /// <summary>
+        /// 解压缩Payload，并根据不同的指令类型做对应的序列化处理
+        /// </summary>
         private void DecompressPayload()
         {
             if (_payload_compressed.Length == 0) return;
@@ -109,7 +127,10 @@ namespace Neo.Network.P2P
             }
         }
 
-        //反序列化
+        /// <summary>
+        /// 反序列化
+        /// </summary>
+        /// <param name="reader"></param>
         void ISerializable.Deserialize(BinaryReader reader)
         {
             Flags = (MessageFlags)reader.ReadByte();
@@ -118,7 +139,10 @@ namespace Neo.Network.P2P
             DecompressPayload();
         }
 
-        //序列化
+        /// <summary>
+        /// 序列化
+        /// </summary>
+        /// <param name="writer"></param>
         void ISerializable.Serialize(BinaryWriter writer)
         {
             writer.Write((byte)Flags);

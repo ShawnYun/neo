@@ -141,7 +141,11 @@ namespace Neo.Network.P2P
             });
         }
 
-        //判断是否为局域网地址
+        /// <summary>
+        /// 判断是否为局域网地址
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
         private static bool IsIntranetAddress(IPAddress address)
         {
             byte[] data = address.MapToIPv4().GetAddressBytes();
@@ -319,7 +323,12 @@ namespace Neo.Network.P2P
             }
         }
 
-        //Ws连接消息
+        /// <summary>
+        /// Ws连接消息
+        /// </summary>
+        /// <param name="ws"></param>
+        /// <param name="remote"></param>
+        /// <param name="local"></param>
         private void OnWsConnected(WebSocket ws, IPEndPoint remote, IPEndPoint local)
         {
             ConnectedAddresses.TryGetValue(remote.Address, out int count);

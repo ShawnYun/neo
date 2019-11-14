@@ -92,7 +92,11 @@ namespace Neo.Network.P2P
             SendMessage(queue.Dequeue());
         }
 
-        //消息入队列
+        /// <summary>
+        /// 消息入队列
+        /// </summary>
+        /// <param name="command"></param>
+        /// <param name="payload"></param>
         private void EnqueueMessage(MessageCommand command, ISerializable payload = null)
         {
             EnqueueMessage(Message.Create(command, payload));
@@ -157,7 +161,10 @@ namespace Neo.Network.P2P
                 protocol.Tell(message);
         }
 
-        //收到不同类型的消息处理方法
+        /// <summary>
+        /// 收到不同类型的消息处理方法
+        /// </summary>
+        /// <param name="message"></param>
         protected override void OnReceive(object message)
         {
             base.OnReceive(message);

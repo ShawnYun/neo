@@ -25,9 +25,13 @@ namespace Neo.Network.P2P
         private readonly NeoSystem system;
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new ConcurrentDictionary<IActorRef, RemoteNode>();
 
-        //连接数等于RemoteNode数量
+        /// <summary>
+        /// 连接数等于RemoteNode数量
+        /// </summary>
         public int ConnectedCount => RemoteNodes.Count;
-        //未连接数等于UnconnectedPeers数量
+        /// <summary>
+        /// 未连接数等于UnconnectedPeers数量
+        /// </summary>
         public int UnconnectedCount => UnconnectedPeers.Count;
         public static readonly uint Nonce;
         public static string UserAgent { get; set; }
@@ -60,19 +64,31 @@ namespace Neo.Network.P2P
             }
         }
 
-        //广播消息
+        /// <summary>
+        /// 广播消息
+        /// </summary>
+        /// <param name="command">消息指令</param>
+        /// <param name="payload">负载</param>
         private void BroadcastMessage(MessageCommand command, ISerializable payload = null)
         {
             BroadcastMessage(Message.Create(command, payload));
         }
 
-        //向所有连接的节点发送消息
+        /// <summary>
+        /// 向所有连接的节点发送消息
+        /// </summary>
+        /// <param name="message"></param>
         private void BroadcastMessage(Message message)
         {
             Connections.Tell(message);
         }
 
-        //根据主机名或地址，及端口号获取IPEndPoint
+        /// <summary>
+        /// 根据主机名或地址，及端口号获取IPEndPoint
+        /// </summary>
+        /// <param name="hostNameOrAddress"></param>
+        /// <param name="port"></param>
+        /// <returns></returns>
         private static IPEndPoint GetIPEndpointFromHostPort(string hostNameOrAddress, int port)
         {
             if (IPAddress.TryParse(hostNameOrAddress, out IPAddress ipAddress))
@@ -195,11 +211,19 @@ namespace Neo.Network.P2P
             system.Blockchain.Tell(inventory);
         }
 
+        /// <summary>
+        /// 收到RelayDirectly消息，直接向所有连接的节点转发
+        /// </summary>
+        /// <param name="inventory"></param>
         private void OnRelayDirectly(IInventory inventory)
         {
             Connections.Tell(new RemoteNode.Relay { Inventory = inventory });
         }
 
+        /// <summary>
+        /// 收到SendDirectly消息，直接向所有连接的节点发送
+        /// </summary>
+        /// <param name="inventory"></param>
         private void OnSendDirectly(IInventory inventory)
         {
             Connections.Tell(inventory);

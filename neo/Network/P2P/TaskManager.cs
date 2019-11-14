@@ -183,7 +183,11 @@ namespace Neo.Network.P2P
             }
         }
 
-        //
+        /// <summary>
+        /// 增加hash对应的globalTasks值
+        /// </summary>
+        /// <param name="hash"></param>
+        /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool IncrementGlobalTask(UInt256 hash)
         {

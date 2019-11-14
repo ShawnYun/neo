@@ -341,7 +341,9 @@ namespace Neo.Network.P2P
             Context.Parent.Tell(payload);
         }
 
-        //收到verack消息交给RemoteNode处理
+        /// <summary>
+        /// 收到verack消息交给RemoteNode处理
+        /// </summary>
         private void OnVerackMessageReceived()
         {
             verack = true;
