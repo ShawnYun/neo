@@ -138,6 +138,7 @@ namespace Neo.Network.P2P
                     break;
             }
             if (!is_single || message_queue.All(p => p.Command != message.Command))
+                //Queue是引用类型
                 message_queue.Enqueue(message);
             CheckMessageQueue();
         }

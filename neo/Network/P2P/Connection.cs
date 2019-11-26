@@ -125,7 +125,7 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// 接收到数据后如何处理data依靠实现接口方法
+        /// TCP接收到数据后如何处理data依靠实现接口方法
         /// </summary>
         /// <param name="data"></param>
         private void OnReceived(ByteString data)

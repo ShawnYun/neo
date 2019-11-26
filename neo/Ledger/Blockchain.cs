@@ -57,18 +57,36 @@ namespace Neo.Ledger
         private const int MaxTxToReverifyPerIdle = 10;
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
+        /// <summary>
+        /// 区块头索引
+        /// </summary>
         private readonly List<UInt256> header_index = new List<UInt256>();
         private uint stored_header_count = 0;
         private readonly Dictionary<UInt256, Block> block_cache = new Dictionary<UInt256, Block>();
+        /// <summary>
+        /// 暂时无法验证的区块缓存
+        /// </summary>
         private readonly Dictionary<uint, LinkedList<Block>> block_cache_unverified = new Dictionary<uint, LinkedList<Block>>();
         internal readonly RelayCache ConsensusRelayCache = new RelayCache(100);
         private Snapshot currentSnapshot;
 
         public Store Store { get; }
         public MemoryPool MemPool { get; }
+        /// <summary>
+        /// 当前snapshot对应的高度
+        /// </summary>
         public uint Height => currentSnapshot.Height;
+        /// <summary>
+        /// 当前snapshot对应区块头高度
+        /// </summary>
         public uint HeaderHeight => currentSnapshot.HeaderHeight;
+        /// <summary>
+        /// 当前snapshot对应的最高区块的hash
+        /// </summary>
         public UInt256 CurrentBlockHash => currentSnapshot.CurrentBlockHash;
+        /// <summary>
+        /// 当前snapshot对应最高区块头hash
+        /// </summary>
         public UInt256 CurrentHeaderHash => currentSnapshot.CurrentHeaderHash;
 
         private static Blockchain singleton;
@@ -95,6 +113,11 @@ namespace Neo.Ledger
             }
         }
 
+        /// <summary>
+        /// 启动blockchain
+        /// </summary>
+        /// <param name="system"></param>
+        /// <param name="store"></param>
         public Blockchain(NeoSystem system, Store store)
         {
             this.system = system;
@@ -142,12 +165,21 @@ namespace Neo.Ledger
             return Store.ContainsBlock(hash);
         }
 
+        /// <summary>
+        /// 是否包含某交易，先从内存池查询，再从store查询
+        /// </summary>
+        /// <param name="hash"></param>
+        /// <returns></returns>
         public bool ContainsTransaction(UInt256 hash)
         {
             if (MemPool.ContainsKey(hash)) return true;
             return Store.ContainsTransaction(hash);
         }
 
+        /// <summary>
+        /// 部署原生合约
+        /// </summary>
+        /// <returns></returns>
         private static Transaction DeployNativeContracts()
         {
             byte[] script;
@@ -175,6 +207,11 @@ namespace Neo.Ledger
             };
         }
 
+        /// <summary>
+        /// 获取hash对应区块
+        /// </summary>
+        /// <param name="hash"></param>
+        /// <returns></returns>
         public Block GetBlock(UInt256 hash)
         {
             if (block_cache.TryGetValue(hash, out Block block))
@@ -182,12 +219,22 @@ namespace Neo.Ledger
             return Store.GetBlock(hash);
         }
 
+        /// <summary>
+        /// 根据index获取区块hash
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
         public UInt256 GetBlockHash(uint index)
         {
             if (header_index.Count <= index) return null;
             return header_index[(int)index];
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="validators"></param>
+        /// <returns></returns>
         public static UInt160 GetConsensusAddress(ECPoint[] validators)
         {
             return Contract.CreateMultiSigRedeemScript(validators.Length - (validators.Length - 1) / 3, validators).ToScriptHash();
@@ -218,6 +265,10 @@ namespace Neo.Ledger
             Sender.Tell(new ImportCompleted());
         }
 
+        /// <summary>
+        /// 将暂时无法验证的block加入cache
+        /// </summary>
+        /// <param name="block"></param>
         private void AddUnverifiedBlockToCache(Block block)
         {
             if (!block_cache_unverified.TryGetValue(block.Index, out LinkedList<Block> blocks))
@@ -254,22 +305,32 @@ namespace Neo.Ledger
             Sender.Tell(new FillCompleted());
         }
 
+        /// <summary>
+        /// 收到block
+        /// </summary>
+        /// <param name="block"></param>
+        /// <returns></returns>
         private RelayResultReason OnNewBlock(Block block)
         {
+            //已收到的区块，返回已存在
             if (block.Index <= Height)
                 return RelayResultReason.AlreadyExists;
+            //已放入block_cache的区块，返回已存在
             if (block_cache.ContainsKey(block.Hash))
                 return RelayResultReason.AlreadyExists;
+            //如果收到的区块缺少前面的区块去验证，则加入cache
             if (block.Index - 1 >= header_index.Count)
             {
                 AddUnverifiedBlockToCache(block);
                 return RelayResultReason.UnableToVerify;
             }
+            //收到最新区块，判断其前一个区块hash与当前区块头是否相等
             if (block.Index == header_index.Count)
             {
                 if (!block.Verify(currentSnapshot))
                     return RelayResultReason.Invalid;
             }
+            //收到的区块hash与区块头hash比较
             else
             {
                 if (!block.Hash.Equals(header_index[(int)block.Index]))
@@ -279,6 +340,7 @@ namespace Neo.Ledger
             {
                 Block block_persist = block;
                 List<Block> blocksToPersistList = new List<Block>();
+                //从Height+1高度开始，依次从block_cache中取出所有已获取区块头的连续区块。
                 while (true)
                 {
                     blocksToPersistList.Add(block_persist);
@@ -288,6 +350,7 @@ namespace Neo.Ledger
                 }
 
                 int blocksPersisted = 0;
+                //依次将区块持久化
                 foreach (Block blockToPersist in blocksToPersistList)
                 {
                     block_cache_unverified.Remove(blockToPersist.Index);
@@ -312,6 +375,7 @@ namespace Neo.Ledger
                     block_cache_unverified.Remove(Height + 1);
                 }
             }
+            //如果不是当前高度之后的一个区块，则加入block_cache
             else
             {
                 block_cache.Add(block.Hash, block);
@@ -428,6 +492,10 @@ namespace Neo.Ledger
             }
         }
 
+        /// <summary>
+        /// 持久化区块
+        /// </summary>
+        /// <param name="block"></param>
         private void Persist(Block block)
         {
             using (Snapshot snapshot = GetSnapshot())
@@ -513,7 +581,10 @@ namespace Neo.Ledger
             return Akka.Actor.Props.Create(() => new Blockchain(system, store)).WithMailbox("blockchain-mailbox");
         }
 
-        //
+        /// <summary>
+        /// 保存区块头hash列表
+        /// </summary>
+        /// <param name="snapshot"></param>
         private void SaveHeaderHashList(Snapshot snapshot = null)
         {
             if ((header_index.Count - stored_header_count < 2000))

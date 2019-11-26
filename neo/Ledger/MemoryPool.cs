@@ -341,6 +341,11 @@ namespace Neo.Ledger
         }
 
         // Note: this must only be called from a single thread (the Blockchain actor)
+        /// <summary>
+        /// 每次持久化完一个区块，更新内存池
+        /// </summary>
+        /// <param name="block"></param>
+        /// <param name="snapshot"></param>
         internal void UpdatePoolForBlockPersisted(Block block, Snapshot snapshot)
         {
             bool policyChanged = LoadPolicy(snapshot);

@@ -25,8 +25,14 @@ namespace Neo.Network.P2P
 
         private readonly NeoSystem system;
         private const int MaxConncurrentTasks = 3;
+        /// <summary>
+        /// 已完成的任务hash
+        /// </summary>
         private readonly FIFOSet<UInt256> knownHashes;
         private readonly Dictionary<UInt256, int> globalTasks = new Dictionary<UInt256, int>();
+        /// <summary>
+        /// 每个TCP连接对应一个session,保存了对应actor的引用以及version信息
+        /// </summary>
         private readonly Dictionary<IActorRef, TaskSession> sessions = new Dictionary<IActorRef, TaskSession>();
         private readonly ICancelable timer = Context.System.Scheduler.ScheduleTellRepeatedlyCancelable(TimerInterval, TimerInterval, Context.Self, new Timer(), ActorRefs.NoSender);
         /// <summary>
@@ -151,7 +157,8 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// Task完成，将hash添加进KnowHash,从globaltask中移除
+        /// 收到一个hash对应的Task完成的消息，例如请求某hash对应的block,现在收到该block时则会产生请求完成消息，
+        /// 将hash添加进KnowHash,从globaltask中移除
         /// </summary>
         /// <param name="hash"></param>
         private void OnTaskCompleted(UInt256 hash)
@@ -184,7 +191,7 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// 增加hash对应的globalTasks值
+        /// 增加hash对应的globalTasks值，如果是新hash，则初始化为1，如果超过最大task数，返回false;
         /// </summary>
         /// <param name="hash"></param>
         /// <returns></returns>
@@ -262,16 +269,18 @@ namespace Neo.Network.P2P
                         if (!IncrementGlobalTask(hash))
                             hashes.Remove(hash);
                     }
+                    //去掉所有未添加进GlobalTask的hash
                     session.AvailableTasks.ExceptWith(hashes);
                     foreach (UInt256 hash in hashes)
                         session.Tasks[hash] = DateTime.UtcNow;
+                    //type是block，表示请求hash对应的区块
                     foreach (InvPayload group in InvPayload.CreateGroup(InventoryType.Block, hashes.ToArray()))
                         //交给RemoteNode处理
                         session.RemoteNode.Tell(Message.Create(MessageCommand.GetData, group));
                     return;
                 }
             }
-            //AvailableTasks数量不大于0
+            //AvailableTasks数量不大于0，即没有其他任务时，进行同步区块头和区块的任务
             if ((!HasHeaderTask || globalTasks[HeaderTaskHash] < MaxConncurrentTasks) && Blockchain.Singleton.HeaderHeight < session.StartHeight)
             {
                 session.Tasks[HeaderTaskHash] = DateTime.UtcNow;

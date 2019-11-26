@@ -203,7 +203,7 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// 获取数据消息；
+        /// 获取数据消息；由其他节点传来，内容为一批500个的hash值
         /// 如果是tx类型，获取hash对应的tx，返回给RemoteNode
         /// 如果是Block类型，没有布隆过滤器则获取对应block返回给RemoteNode,否则经布隆过滤器返回给RemoteNode.
         /// 如果是Consensus类型，当ConsensusRelayCache包含该hash时，取出对应inventoryConsensus返回给RemoteNode.
