@@ -48,7 +48,7 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// 一个同步区块头任务完成，sender对应session中将 对应的task移除；
+        /// 一个同步区块头任务完成，sender对应session中将对应的task移除；
         /// 减少GlobalTask;
         /// </summary>
         private void OnHeaderTaskCompleted()

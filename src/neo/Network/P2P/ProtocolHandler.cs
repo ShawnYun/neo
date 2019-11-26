@@ -178,7 +178,7 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// 收到请求区块消息，从请求的hash开始发送指定数量的Block
+        /// 收到请求区块消息，从请求的hash开始发送指定数量的区块hash
         /// </summary>
         /// <param name="payload">请求区块消息，包括开始区块Hash以及请求块数</param>
         private void OnGetBlocksMessageReceived(GetBlocksPayload payload)

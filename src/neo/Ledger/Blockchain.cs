@@ -398,6 +398,11 @@ namespace Neo.Ledger
             return RelayResultReason.Succeed;
         }
 
+        /// <summary>
+        /// 收到新的共识消息
+        /// </summary>
+        /// <param name="payload"></param>
+        /// <returns></returns>
         private RelayResultReason OnNewConsensus(ConsensusPayload payload)
         {
             if (!payload.Verify(currentSnapshot)) return RelayResultReason.Invalid;

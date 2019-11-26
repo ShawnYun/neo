@@ -15,6 +15,9 @@ namespace Neo.Network.P2P.Payloads
         public uint Version;
         public UInt256 PrevHash;
         public uint BlockIndex;
+        /// <summary>
+        /// 验证者序号
+        /// </summary>
         public ushort ValidatorIndex;
         public byte[] Data;
         public Witness Witness;

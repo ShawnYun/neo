@@ -193,6 +193,10 @@ namespace Neo.Ledger
             }
         }
 
+        /// <summary>
+        /// 获取所有已排序已验证的交易
+        /// </summary>
+        /// <returns></returns>
         public IEnumerable<Transaction> GetSortedVerifiedTransactions()
         {
             _txRwLock.EnterReadLock();

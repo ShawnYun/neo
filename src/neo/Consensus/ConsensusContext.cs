@@ -42,8 +42,13 @@ namespace Neo.Consensus
         private int _witnessSize;
         private readonly Wallet wallet;
         private readonly Store store;
-
+        /// <summary>
+        /// 最多可容纳坏节点个数
+        /// </summary>
         public int F => (Validators.Length - 1) / 3;
+        /// <summary>
+        /// 最少需要的正常节点个数
+        /// </summary>
         public int M => Validators.Length - F;
         public bool IsPrimary => MyIndex == Block.ConsensusData.PrimaryIndex;
         public bool IsBackup => MyIndex >= 0 && MyIndex != Block.ConsensusData.PrimaryIndex;
@@ -75,6 +80,10 @@ namespace Neo.Consensus
             this.store = store;
         }
 
+        /// <summary>
+        /// 根据共识上下文生成区块
+        /// </summary>
+        /// <returns></returns>
         public Block CreateBlock()
         {
             EnsureHeader();
@@ -264,6 +273,11 @@ namespace Neo.Consensus
             TransactionHashes = hashes.ToArray();
         }
 
+        /// <summary>
+        /// 生成PrepareRequest消息；
+        /// 首先生成Nonce，从内存池取出已验证交易，生成区块，进行签名；
+        /// </summary>
+        /// <returns></returns>
         public ConsensusPayload MakePrepareRequest()
         {
             var random = new Random();

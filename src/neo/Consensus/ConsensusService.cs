@@ -116,6 +116,9 @@ namespace Neo.Consensus
             }, ActorRefs.NoSender);
         }
 
+        /// <summary>
+        /// 检查commit阶段，生成区块
+        /// </summary>
         private void CheckCommits()
         {
             if (context.CommitPayloads.Count(p => p?.ConsensusMessage.ViewNumber == context.ViewNumber) >= context.M && context.TransactionHashes.All(p => context.Transactions.ContainsKey(p)))
@@ -251,6 +254,10 @@ namespace Neo.Consensus
                 ChangeTimer(nextDelay);
         }
 
+        /// <summary>
+        /// 收到其他节点的共识消息
+        /// </summary>
+        /// <param name="payload"></param>
         private void OnConsensusPayload(ConsensusPayload payload)
         {
             if (context.BlockSent) return;
@@ -399,6 +406,11 @@ namespace Neo.Consensus
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakeRecoveryMessage() });
         }
 
+        /// <summary>
+        /// 收到PrepareRequest消息
+        /// </summary>
+        /// <param name="payload"></param>
+        /// <param name="message"></param>
         private void OnPrepareRequestReceived(ConsensusPayload payload, PrepareRequest message)
         {
             if (context.RequestSentOrReceived || context.NotAcceptingPayloadsDueToViewChanging) return;
@@ -549,6 +561,10 @@ namespace Neo.Consensus
                 RequestRecovery();
         }
 
+        /// <summary>
+        /// 收到定时器消息，开始共识
+        /// </summary>
+        /// <param name="timer"></param>
         private void OnTimer(Timer timer)
         {
             if (context.WatchOnly || context.BlockSent) return;
@@ -635,6 +651,9 @@ namespace Neo.Consensus
             return true;
         }
 
+        /// <summary>
+        /// 发送PrepareRequest请求
+        /// </summary>
         private void SendPrepareRequest()
         {
             Log($"send prepare request: height={context.Block.Index} view={context.ViewNumber}");
