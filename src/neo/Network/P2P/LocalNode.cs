@@ -23,10 +23,13 @@ namespace Neo.Network.P2P
 
         private static readonly object lockObj = new object();
         private readonly NeoSystem system;
+        /// <summary>
+        /// 保存所有RemoteNodes的字典
+        /// </summary>
         internal readonly ConcurrentDictionary<IActorRef, RemoteNode> RemoteNodes = new ConcurrentDictionary<IActorRef, RemoteNode>();
 
         /// <summary>
-        /// 连接数等于RemoteNode数量
+        /// 已连接数等于RemoteNode数量
         /// </summary>
         public int ConnectedCount => RemoteNodes.Count;
         /// <summary>
@@ -65,7 +68,7 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// 广播消息
+        /// 将消息广播给所有已连接节点
         /// </summary>
         /// <param name="command">消息指令</param>
         /// <param name="payload">负载</param>
@@ -110,7 +113,7 @@ namespace Neo.Network.P2P
         /// <summary>
         /// 从种子节点列表获取指定数量的种子节点
         /// </summary>
-        /// <param name="seedsToTake"></param>
+        /// <param name="seedsToTake">需要获取的种子节点数量</param>
         /// <returns></returns>
         private static IEnumerable<IPEndPoint> GetIPEndPointsFromSeedList(int seedsToTake)
         {
@@ -160,7 +163,7 @@ namespace Neo.Network.P2P
         /// 如果已连接节点数量大于0，则广播GetAddr消息；
         /// 否则从种子节点列表读取。
         /// </summary>
-        /// <param name="count"></param>
+        /// <param name="count">需要的节点数量</param>
         protected override void NeedMorePeers(int count)
         {
             count = Math.Max(count, 5);

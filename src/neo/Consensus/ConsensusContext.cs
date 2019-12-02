@@ -54,6 +54,9 @@ namespace Neo.Consensus
         public bool IsBackup => MyIndex >= 0 && MyIndex != Block.ConsensusData.PrimaryIndex;
         public bool WatchOnly => MyIndex < 0;
         public Header PrevHeader => Snapshot.GetHeader(Block.PrevHash);
+        /// <summary>
+        /// commit提交节点数量
+        /// </summary>
         public int CountCommitted => CommitPayloads.Count(p => p != null);
         public int CountFailed => LastSeenMessage.Count(p => p < (((int)Block.Index) - 1));
 
@@ -275,7 +278,7 @@ namespace Neo.Consensus
 
         /// <summary>
         /// 生成PrepareRequest消息；
-        /// 首先生成Nonce，从内存池取出已验证交易，生成区块，进行签名；
+        /// 首先生成Nonce，从内存池取出已验证交易，按照指定数量生成区块，进行签名；
         /// </summary>
         /// <returns></returns>
         public ConsensusPayload MakePrepareRequest()

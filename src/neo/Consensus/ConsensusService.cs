@@ -658,7 +658,7 @@ namespace Neo.Consensus
         {
             Log($"send prepare request: height={context.Block.Index} view={context.ViewNumber}");
             localNode.Tell(new LocalNode.SendDirectly { Inventory = context.MakePrepareRequest() });
-
+            //单节点模式直接commit
             if (context.Validators.Length == 1)
                 CheckPreparations();
 

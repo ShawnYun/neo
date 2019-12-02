@@ -256,7 +256,7 @@ namespace Neo.Network.P2P
         }
 
         /// <summary>
-        /// 收到连接方发来的Version负责信息，保存对方的相关信息；
+        /// 收到连接方发来的Version负载信息，保存对方的相关信息；
         /// 如果没有重复连接，则最后发送Verack给对方。
         /// </summary>
         /// <param name="version"></param>
