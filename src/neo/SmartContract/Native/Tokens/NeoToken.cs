@@ -17,7 +17,6 @@ namespace Neo.SmartContract.Native.Tokens
 {
     public sealed class NeoToken : Nep5Token<NeoToken.AccountState>
     {
-        public override string ServiceName => "Neo.Native.Tokens.NEO";
         public override int Id => -1;
         public override string Name => "NEO";
         public override string Symbol => "neo";
@@ -93,12 +92,12 @@ namespace Neo.SmartContract.Native.Tokens
             if (!base.Initialize(engine)) return false;
             if (base.TotalSupply(engine.Snapshot) != BigInteger.Zero) return false;
             BigInteger amount = TotalAmount;
-            for (int i = 0; i < Blockchain.CommitteeMembersCount; i++)
+            for (int i = 0; i < Blockchain.StandbyCommittee.Length; i++)
             {
                 ECPoint pubkey = Blockchain.StandbyCommittee[i];
                 RegisterCandidate(engine.Snapshot, pubkey);
-                BigInteger balance = TotalAmount / 2 / (Blockchain.ValidatorsCount * 2 + (Blockchain.CommitteeMembersCount - Blockchain.ValidatorsCount));
-                if (i < Blockchain.ValidatorsCount) balance *= 2;
+                BigInteger balance = TotalAmount / 2 / (Blockchain.StandbyValidators.Length * 2 + (Blockchain.StandbyCommittee.Length - Blockchain.StandbyValidators.Length));
+                if (i < Blockchain.StandbyValidators.Length) balance *= 2;
                 UInt160 account = Contract.CreateSignatureRedeemScript(pubkey).ToScriptHash();
                 Mint(engine, account, balance);
                 Vote(engine.Snapshot, account, pubkey);
@@ -116,7 +115,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(0_03000000, ContractParameterType.Integer, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "account", "end" }, SafeMethod = true)]
+        [ContractMethod(0_03000000, ContractParameterType.Integer, CallFlags.AllowStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Integer }, ParameterNames = new[] { "account", "end" })]
         private StackItem UnclaimedGas(ApplicationEngine engine, Array args)
         {
             UInt160 account = new UInt160(args[0].GetSpan());
@@ -132,7 +131,7 @@ namespace Neo.SmartContract.Native.Tokens
             return CalculateBonus(snapshot, state.Balance, state.BalanceHeight, end);
         }
 
-        [ContractMethod(0_05000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" })]
+        [ContractMethod(0_05000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" })]
         private StackItem RegisterCandidate(ApplicationEngine engine, Array args)
         {
             ECPoint pubkey = args[0].GetSpan().AsSerializable<ECPoint>();
@@ -150,7 +149,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(0_05000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" })]
+        [ContractMethod(0_05000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.PublicKey }, ParameterNames = new[] { "pubkey" })]
         private StackItem UnregisterCandidate(ApplicationEngine engine, Array args)
         {
             ECPoint pubkey = args[0].GetSpan().AsSerializable<ECPoint>();
@@ -172,7 +171,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(5_00000000, ContractParameterType.Boolean, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Array }, ParameterNames = new[] { "account", "pubkeys" })]
+        [ContractMethod(5_00000000, ContractParameterType.Boolean, CallFlags.AllowModifyStates, ParameterTypes = new[] { ContractParameterType.Hash160, ContractParameterType.Array }, ParameterNames = new[] { "account", "pubkeys" })]
         private StackItem Vote(ApplicationEngine engine, Array args)
         {
             UInt160 account = new UInt160(args[0].GetSpan());
@@ -209,7 +208,7 @@ namespace Neo.SmartContract.Native.Tokens
             return true;
         }
 
-        [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
+        [ContractMethod(1_00000000, ContractParameterType.Array, CallFlags.AllowStates)]
         private StackItem GetCandidates(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, GetCandidates(engine.Snapshot).Select(p => new Struct(engine.ReferenceCounter, new StackItem[] { p.PublicKey.ToArray(), p.Votes })));
@@ -225,7 +224,7 @@ namespace Neo.SmartContract.Native.Tokens
             )).Where(p => p.Item2.Registered).Select(p => (p.Item1, p.Item2.Votes));
         }
 
-        [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
+        [ContractMethod(1_00000000, ContractParameterType.Array, CallFlags.AllowStates)]
         private StackItem GetValidators(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, GetValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
@@ -233,10 +232,10 @@ namespace Neo.SmartContract.Native.Tokens
 
         public ECPoint[] GetValidators(StoreView snapshot)
         {
-            return GetCommitteeMembers(snapshot, Blockchain.ValidatorsCount).OrderBy(p => p).ToArray();
+            return GetCommitteeMembers(snapshot, ProtocolSettings.Default.MaxValidatorsCount).OrderBy(p => p).ToArray();
         }
 
-        [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
+        [ContractMethod(1_00000000, ContractParameterType.Array, CallFlags.AllowStates)]
         private StackItem GetCommittee(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, GetCommittee(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
@@ -244,7 +243,7 @@ namespace Neo.SmartContract.Native.Tokens
 
         public ECPoint[] GetCommittee(StoreView snapshot)
         {
-            return GetCommitteeMembers(snapshot, Blockchain.CommitteeMembersCount).OrderBy(p => p).ToArray();
+            return GetCommitteeMembers(snapshot, ProtocolSettings.Default.MaxCommitteeMembersCount).OrderBy(p => p).ToArray();
         }
 
         private IEnumerable<ECPoint> GetCommitteeMembers(StoreView snapshot, int count)
@@ -252,7 +251,7 @@ namespace Neo.SmartContract.Native.Tokens
             return GetCandidates(snapshot).OrderByDescending(p => p.Votes).ThenBy(p => p.PublicKey).Select(p => p.PublicKey).Take(count);
         }
 
-        [ContractMethod(1_00000000, ContractParameterType.Array, SafeMethod = true)]
+        [ContractMethod(1_00000000, ContractParameterType.Array, CallFlags.AllowStates)]
         private StackItem GetNextBlockValidators(ApplicationEngine engine, Array args)
         {
             return new Array(engine.ReferenceCounter, GetNextBlockValidators(engine.Snapshot).Select(p => (StackItem)p.ToArray()));
