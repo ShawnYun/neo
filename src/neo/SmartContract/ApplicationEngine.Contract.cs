@@ -140,8 +140,7 @@ namespace Neo.SmartContract
             ContractMethodDescriptor md = contract.Manifest.Abi.GetMethod(method);
             if (md is null) throw new InvalidOperationException();
             if (args.Count != md.Parameters.Length) throw new InvalidOperationException();
-            int rvcount = md.ReturnType == ContractParameterType.Void ? 0 : 1;
-            ExecutionContext context_new = LoadScript(contract.Script, rvcount);
+            ExecutionContext context_new = LoadScript(contract.Script);
             state = context_new.GetState<ExecutionContextState>();
             state.CallingScriptHash = callingScriptHash;
             state.CallFlags = flags & callingFlags;
